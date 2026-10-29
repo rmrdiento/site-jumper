@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Site Jumper",
+  "version": "0.3.3",
+  "description": "Переносит страницу фильма или сериала на другой сайт одной кнопкой (kinopoisk.ru → kinopoisk.me).",
+  "permissions": ["storage"],
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": {
+    "default_title": "Перейти на зеркало",
+    "default_icon": { "16": "icons/16.png", "48": "icons/48.png" }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "site-jumper@rmr",
+      "strict_min_version": "115.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.kinopoisk.ru/*", "*://kinopoisk.ru/*"],
+      "js": ["rules.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
