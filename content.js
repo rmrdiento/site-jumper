@@ -61,6 +61,68 @@
     }
   }
 
+  // Плеер зеркала прямо на странице: блок перед секцией «О фильме».
+  // Кинопоиск запрещает чужие фреймы через CSP — её снимает правило из rules.json.
+  const EMBED_ID = "site-jumper-embed";
+
+  function findAboutHeading() {
+    return [...document.querySelectorAll("h3")].find((h) => /^О (фильме|сериале)$/.test(h.textContent.trim()));
+  }
+
+  async function confirmOnce(host) {
+    const { [SKIP_KEY]: skip } = await api.storage.local.get(SKIP_KEY);
+    if (skip) return true;
+    const { ok, remember } = await askConfirm(host);
+    if (ok && remember) await api.storage.local.set({ [SKIP_KEY]: true });
+    return ok;
+  }
+
+  function buildEmbed(result) {
+    const box = document.createElement("div");
+    box.id = EMBED_ID;
+    box.dataset.href = result.href;
+    box.style.cssText = "margin:0 0 32px;border-radius:12px;overflow:hidden;background:#111;color:#fff;font:14px system-ui,sans-serif;";
+    const start = document.createElement("button");
+    start.textContent = "▶ Смотреть здесь (" + result.host + ")";
+    start.style.cssText = btnCss + "display:block;width:100%;padding:70px 16px;border-radius:0;background:#222;color:#fff;";
+    start.addEventListener("click", async () => {
+      try {
+        if (!(await confirmOnce(result.host))) return;
+        const frame = document.createElement("iframe");
+        frame.src = result.href;
+        frame.allow = "fullscreen; autoplay; encrypted-media";
+        frame.allowFullscreen = true;
+        frame.referrerPolicy = "no-referrer";
+        frame.style.cssText = "display:block;width:100%;height:480px;border:0;";
+        start.replaceWith(frame);
+      } catch (err) {
+        console.error("[Site Jumper]", err);
+      }
+    });
+    box.appendChild(start);
+    return box;
+  }
+
+  function syncEmbed() {
+    const result = convertUrl(location.href);
+    const old = document.getElementById(EMBED_ID);
+    if (!result) { old?.remove(); return; }
+    if (old && old.dataset.href !== result.href) old.remove(); // другой фильм (SPA)
+    else if (old?.isConnected) return;
+    const h = findAboutHeading();
+    if (!h) return;
+    // Секция целиком (заголовок + таблица) — на два уровня выше h3; если она узкая, вставляем рядом с заголовком.
+    let anchor = h.parentElement?.parentElement;
+    if (!anchor || anchor.getBoundingClientRect().width < 500) anchor = h;
+    anchor.parentElement.insertBefore(buildEmbed(result), anchor);
+  }
+
+  let embedTimer;
+  new MutationObserver(() => {
+    clearTimeout(embedTimer);
+    embedTimer = setTimeout(syncEmbed, 300);
+  }).observe(document.body, { childList: true, subtree: true });
+
   btn.addEventListener("click", jump);
   api.runtime.onMessage.addListener((msg) => { if (msg?.type === "jump") jump(); });
 
