@@ -1,4 +1,4 @@
-// Плееры прямо на странице фильма/сериала: блок между обложкой и трейлером, размером с трейлер.
+// Плееры прямо на странице фильма/сериала: блок над заголовком фильма, 582×280 на экране 1920 px.
 // Список плееров — из API Kinobox (как на зеркале), выбор плеера и озвучки — своя панель. Кинопоиск запрещает чужие фреймы через CSP — её снимает правило из rules.json.
 (() => {
   const api = globalThis.browser ?? chrome;
@@ -42,11 +42,9 @@
     return ok;
   }
 
-  // Класс .film-trailer стабильный, остальные классы Кинопоиска содержат хеши и меняются.
-  const findTrailer = () => {
-    const trailer = document.querySelector(".film-trailer");
-    return trailer?.closest("aside") ?? trailer;
-  };
+  // Заголовок — h1[itemprop=name] (классы Кинопоиска с хешами меняются, itemprop стабильный). Блок ставим перед его обёрткой,
+  // т.е. над заголовком в той же колонке. Второй h1 на странице — окно cookie, поэтому ищем по itemprop.
+  const findTitle = () => document.querySelector('h1[itemprop="name"]')?.parentElement;
 
   const selectCss = "flex:1;min-width:0;height:32px;padding:0 8px;border:0;border-radius:6px;background:#333;color:#fff;font:13px system-ui,sans-serif;";
   const PLAYER_KEY = "lastPlayer";
@@ -64,7 +62,7 @@
     // "*": плееры перенаправляют на другие домены, а голое "fullscreen" действует только на домен из src.
     frame.allow = "fullscreen *; autoplay *; encrypted-media *; picture-in-picture *";
     frame.allowFullscreen = true;
-    frame.referrerPolicy = "no-referrer";
+    frame.referrerPolicy = "origin"; // без Referer Alloha и др. отвечают «Ошибка!»; "origin" отдаёт только https://www.kinopoisk.ru/
     frame.style.cssText = "display:block;flex:1;min-height:0;width:100%;border:0;";
     return frame;
   }
@@ -118,7 +116,7 @@
     const box = document.createElement("div");
     box.id = EMBED_ID;
     box.dataset.id = id;
-    box.style.cssText = "display:flex;flex-direction:column;width:100%;margin:0 0 16px;border-radius:8px;overflow:hidden;background:#111;";
+    box.style.cssText = "display:flex;flex-direction:column;width:100%;max-width:582px;aspect-ratio:582/280;margin:0 0 16px;border-radius:8px;overflow:hidden;background:#111;";
 
     const start = document.createElement("button");
     start.textContent = "▶ Смотреть здесь";
@@ -142,13 +140,12 @@
     const id = filmId(location.href);
     if (!id) { box?.remove(); return; }
 
-    const trailer = findTrailer();
-    if (!trailer) return; // страница ещё рисуется: повторим на следующей мутации
+    const title = findTitle();
+    if (!title) return; // страница ещё рисуется: повторим на следующей мутации
 
     if (box && box.dataset.id !== id) { box.remove(); box = null; } // другой фильм (SPA)
     box ??= buildEmbed(id);
-    if (box.nextElementSibling !== trailer) trailer.before(box);
-    box.style.height = trailer.offsetHeight + "px"; // размер как у трейлера
+    if (box.nextElementSibling !== title) title.before(box);
   }
 
   // Кинопоиск — SPA: React перерисовывает страницу и меняет адрес без перезагрузки.
@@ -159,6 +156,5 @@
     requestAnimationFrame(() => { queued = false; sync(); });
   };
   new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
-  window.addEventListener("resize", schedule);
   sync();
 })();

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Site Jumper",
-  "version": "0.6.0",
-  "description": "Встраивает плееры (список берётся с того же API, что и у зеркала) между обложкой и трейлером на страницах фильмов и сериалов Кинопоиска, с выбором плеера и озвучки.",
+  "version": "0.7.0",
+  "description": "Встраивает плееры (список берётся с того же API, что и у зеркала) над заголовком фильма на страницах фильмов и сериалов Кинопоиска, с выбором плеера и озвучки.",
   "permissions": ["storage", "declarativeNetRequest"],
   "host_permissions": ["*://*.kinopoisk.ru/*", "*://kinopoisk.ru/*", "https://fbphdplay.top/*"],
   "background": {
