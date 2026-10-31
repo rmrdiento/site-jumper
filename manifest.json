@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Site Jumper",
-  "version": "0.5.0",
-  "description": "Встраивает плеер зеркала (kinopoisk.me) между обложкой и трейлером на страницах фильмов и сериалов Кинопоиска.",
+  "version": "0.6.0",
+  "description": "Встраивает плееры (список берётся с того же API, что и у зеркала) между обложкой и трейлером на страницах фильмов и сериалов Кинопоиска, с выбором плеера и озвучки.",
   "permissions": ["storage", "declarativeNetRequest"],
-  "host_permissions": ["*://*.kinopoisk.ru/*", "*://kinopoisk.ru/*"],
+  "host_permissions": ["*://*.kinopoisk.ru/*", "*://kinopoisk.ru/*", "https://fbphdplay.top/*"],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
   "declarative_net_request": {
     "rule_resources": [{ "id": "embed_csp", "enabled": true, "path": "rules.json" }]
   },
